@@ -1,19 +1,12 @@
-// StockPro Inventory Management System
-// Service: Auth Service
-// Developer: Suru
-
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
 using System.Security.Claims;
 
-// In-memory storage
-var users = new List<User>();
-
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔐 Strong secret key
+// 🔐 Secret key
 var key = "MyVeryStrongSecretKeyForJwtAuth1234567890Secure";
 
 // =========================
@@ -50,11 +43,7 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 // 🔐 Authentication
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
@@ -67,7 +56,6 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// 🔐 Authorization
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
@@ -82,15 +70,20 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 // =========================
+// IN-MEMORY DB
+// =========================
+var users = new List<User>();
+
+// =========================
 // REGISTER
 // =========================
 app.MapPost("/register", (User user) =>
 {
-    if (users.Any(u => u.Username == user.Username))
-        return Results.BadRequest("User already exists");
+    if (string.IsNullOrEmpty(user.Role))
+        return Results.BadRequest("Role is required");
 
     users.Add(user);
-    return Results.Ok($"User registered as {user.Role}");
+    return Results.Ok("User registered");
 });
 
 // =========================
@@ -105,25 +98,26 @@ app.MapPost("/login", (User loginUser) =>
     if (user == null)
         return Results.Unauthorized();
 
+    // ✅ CORRECT (use stored role)
     var token = GenerateJwtToken(user.Username, user.Role, key);
+
     return Results.Ok(new { token });
 });
 
 // =========================
-// 🔐 PROTECTED API
+// PROTECTED TEST
 // =========================
-app.MapGet("/secure", (HttpContext context) =>
-{
-    var username = context.User.Identity?.Name;
-    var role = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-
-    return $"Hello {username}, Role: {role}";
-})
+app.MapGet("/secure", () => "Secure API working")
 .RequireAuthorization();
 
+// =========================
+// ADMIN ONLY
+// =========================
+app.MapGet("/admin", () => "Admin only")
+.RequireAuthorization(policy => policy.RequireRole("Admin"));
 
 // =========================
-// 🔐 JWT TOKEN GENERATION (UPDATED)
+// JWT GENERATION
 // =========================
 string GenerateJwtToken(string username, string role, string key)
 {
@@ -145,11 +139,5 @@ string GenerateJwtToken(string username, string role, string key)
 
     return new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().WriteToken(token);
 }
-app.MapGet("/admin", () => "Welcome Admin")
-   .RequireAuthorization(policy => policy.RequireRole("Admin"));
-   app.MapGet("/staff", () => "Welcome Staff")
-   .RequireAuthorization(policy => policy.RequireRole("Staff"));
-   app.MapGet("/manager", () => "Welcome Manager")
-   .RequireAuthorization(policy => policy.RequireRole("Manager"));
 
 app.Run();

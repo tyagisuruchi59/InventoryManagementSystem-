@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "1UoCuzFXSeg=",
+  "dgSpecHash": "tkHYQyZlxGM=",
   "success": true,
   "projectFilePath": "C:\\Users\\suruc\\OneDrive\\Desktop\\InventoryManagementSystem\\AuthService\\AuthService.csproj",
   "expectedPackageFiles": [
@@ -31,5 +31,15 @@
     "C:\\Users\\suruc\\.nuget\\packages\\swashbuckle.aspnetcore.swaggerui\\6.5.0\\swashbuckle.aspnetcore.swaggerui.6.5.0.nupkg.sha512",
     "C:\\Users\\suruc\\.nuget\\packages\\system.identitymodel.tokens.jwt\\7.0.3\\system.identitymodel.tokens.jwt.7.0.3.nupkg.sha512"
   ],
-  "logs": []
+  "logs": [
+    {
+      "code": "NU1900",
+      "level": "Warning",
+      "message": "Error occurred while getting package vulnerability data: Unable to load the service index for source https://api.nuget.org/v3/index.json.",
+      "projectPath": "C:\\Users\\suruc\\OneDrive\\Desktop\\InventoryManagementSystem\\AuthService\\AuthService.csproj",
+      "warningLevel": 1,
+      "filePath": "C:\\Users\\suruc\\OneDrive\\Desktop\\InventoryManagementSystem\\AuthService\\AuthService.csproj",
+      "targetGraphs": []
+    }
+  ]
 }
