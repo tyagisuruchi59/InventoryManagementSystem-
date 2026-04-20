@@ -1,21 +1,49 @@
+// StockPro Inventory Management System
+// Service: Auth Service | Entry Point
+// Developer: Suru | April 2026
+// Description: Configures all services, middleware, database connection
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
-using System.Security.Claims;
+using AuthService.Data;
+using AuthService.Repositories;
+using AuthService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔐 Secret key
-var key = "MyVeryStrongSecretKeyForJwtAuth1234567890Secure";
+// =============================================
+// DATABASE - Connect to PostgreSQL
+// =============================================
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// =========================
-// SERVICES
-// =========================
+// =============================================
+// DEPENDENCY INJECTION - Register services
+// =============================================
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAuthService, AuthServiceImpl>();
+
+// =============================================
+// CONTROLLERS
+// =============================================
+builder.Services.AddControllers();
+
+// =============================================
+// SWAGGER WITH JWT SUPPORT
+// =============================================
 builder.Services.AddEndpointsApiExplorer();
-
 builder.Services.AddSwaggerGen(options =>
 {
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "StockPro Auth Service",
+        Version = "v1",
+        Description = "Authentication and Authorization for StockPro"
+    });
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -23,7 +51,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Enter 'Bearer YOUR_TOKEN'"
+        Description = "Enter: Bearer YOUR_TOKEN"
     });
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -42,7 +70,11 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// 🔐 Authentication
+// =============================================
+// JWT AUTHENTICATION
+// =============================================
+var key = "MyVeryStrongSecretKeyForJwtAuth1234567890Secure";
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
 {
@@ -60,84 +92,23 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// =========================
+// =============================================
+// AUTO CREATE DATABASE TABLES ON STARTUP
+// =============================================
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    // Creates tables automatically if they don't exist
+    db.Database.EnsureCreated();
+}
+
+// =============================================
 // MIDDLEWARE
-// =========================
+// =============================================
 app.UseSwagger();
 app.UseSwaggerUI();
-
 app.UseAuthentication();
 app.UseAuthorization();
-
-// =========================
-// IN-MEMORY DB
-// =========================
-var users = new List<User>();
-
-// =========================
-// REGISTER
-// =========================
-app.MapPost("/register", (User user) =>
-{
-    if (string.IsNullOrEmpty(user.Role))
-        return Results.BadRequest("Role is required");
-
-    users.Add(user);
-    return Results.Ok("User registered");
-});
-
-// =========================
-// LOGIN
-// =========================
-app.MapPost("/login", (User loginUser) =>
-{
-    var user = users.FirstOrDefault(u =>
-        u.Username == loginUser.Username &&
-        u.Password == loginUser.Password);
-
-    if (user == null)
-        return Results.Unauthorized();
-
-    // ✅ CORRECT (use stored role)
-    var token = GenerateJwtToken(user.Username, user.Role, key);
-
-    return Results.Ok(new { token });
-});
-
-// =========================
-// PROTECTED TEST
-// =========================
-app.MapGet("/secure", () => "Secure API working")
-.RequireAuthorization();
-
-// =========================
-// ADMIN ONLY
-// =========================
-app.MapGet("/admin", () => "Admin only")
-.RequireAuthorization(policy => policy.RequireRole("Admin"));
-
-// =========================
-// JWT GENERATION
-// =========================
-string GenerateJwtToken(string username, string role, string key)
-{
-    var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
-    var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-    var claims = new[]
-    {
-        new Claim(ClaimTypes.Name, username),
-        new Claim(ClaimTypes.Role, role),
-        new Claim("userId", Guid.NewGuid().ToString())
-    };
-
-    var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityToken(
-        claims: claims,
-        expires: DateTime.Now.AddHours(2),
-        signingCredentials: credentials
-    );
-
-    return new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().WriteToken(token);
-}
+app.MapControllers();
 
 app.Run();
