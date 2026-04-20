@@ -1,49 +1,41 @@
 // StockPro Inventory Management System
-// Service: Auth Service | Entry Point
+// Service: Movement Service | Entry Point
 // Developer: Suru | April 2026
-// Description: Configures all services, middleware, database connection
+// Description: Configures PostgreSQL, JWT authentication,
+// dependency injection, Swagger, and middleware pipeline.
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
-using AuthService.Data;
-using AuthService.Repositories;
-using AuthService.Services;
+using MovementService.Data;
+using MovementService.Repositories;
+using MovementService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// =============================================
-// DATABASE - Connect to PostgreSQL
-// =============================================
+// DATABASE
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// =============================================
-// DEPENDENCY INJECTION - Register services
-// =============================================
-builder.Services.AddScoped<IUserRepository, UserRepository>();
-builder.Services.AddScoped<IAuthService, AuthServiceImpl>();
+// DEPENDENCY INJECTION
+builder.Services.AddScoped<IMovementRepository, MovementRepository>();
+builder.Services.AddScoped<IMovementService, MovementServiceImpl>();
 
-// =============================================
 // CONTROLLERS
-// =============================================
 builder.Services.AddControllers();
 
-// =============================================
-// SWAGGER WITH JWT SUPPORT
-// =============================================
+// SWAGGER WITH JWT
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
-        Title = "StockPro Auth Service",
+        Title = "StockPro Movement Service",
         Version = "v1",
-        Description = "Authentication and Authorization for StockPro"
+        Description = "Immutable Stock Movement Audit Trail for StockPro"
     });
-
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -53,7 +45,6 @@ builder.Services.AddSwaggerGen(options =>
         In = ParameterLocation.Header,
         Description = "Enter: Bearer YOUR_TOKEN"
     });
-
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -70,11 +61,8 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// =============================================
 // JWT AUTHENTICATION
-// =============================================
 var key = "MyVeryStrongSecretKeyForJwtAuth1234567890Secure";
-
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
 {
@@ -92,18 +80,14 @@ builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// =============================================
-// AUTO CREATE DATABASE TABLES ON STARTUP
-// =============================================
+// AUTO MIGRATE DATABASE
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 }
 
-// =============================================
 // MIDDLEWARE
-// =============================================
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseAuthentication();
