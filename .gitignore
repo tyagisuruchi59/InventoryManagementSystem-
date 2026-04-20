@@ -1,5 +1,12 @@
-bin/
-obj/
-*.user
-*.log
+# Build folders - do not push these
+**/bin/
+**/obj/
+
+# Visual Studio files
 .vs/
+*.user
+*.suo
+
+# Environment files
+*.env
+appsettings.Development.json
