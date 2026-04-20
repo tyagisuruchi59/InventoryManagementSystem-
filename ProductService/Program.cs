@@ -1,21 +1,49 @@
+// StockPro Inventory Management System
+// Service: Product Service | Entry Point
+// Developer: Suru | April 2026
+// Description: Configures database, JWT auth, services, and middleware
+
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using ProductService.Data;
+using ProductService.Repositories;
+using ProductService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔐 SAME key as Auth Service
-var key = "MyVeryStrongSecretKeyForJwtAuth1234567890Secure";
+// =============================================
+// DATABASE - Connect to PostgreSQL productdb
+// =============================================
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// =========================
-// 🔧 SERVICES
-// =========================
+// =============================================
+// DEPENDENCY INJECTION
+// =============================================
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IProductService, ProductServiceImpl>();
+
+// =============================================
+// CONTROLLERS
+// =============================================
+builder.Services.AddControllers();
+
+// =============================================
+// SWAGGER WITH JWT
+// =============================================
 builder.Services.AddEndpointsApiExplorer();
-
-// ✅ Swagger with JWT support
 builder.Services.AddSwaggerGen(options =>
 {
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "StockPro Product Service",
+        Version = "v1",
+        Description = "Product Catalogue Management for StockPro"
+    });
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -23,7 +51,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Enter 'Bearer YOUR_TOKEN'"
+        Description = "Enter: Bearer YOUR_TOKEN"
     });
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -42,7 +70,11 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// 🔐 Authentication
+// =============================================
+// JWT AUTHENTICATION - same key as Auth Service
+// =============================================
+var key = "MyVeryStrongSecretKeyForJwtAuth1234567890Secure";
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
 {
@@ -56,75 +88,26 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     };
 });
 
-// 🔐 Authorization
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// =========================
-// 🔧 MIDDLEWARE
-// =========================
+// =============================================
+// AUTO CREATE DATABASE TABLES
+// =============================================
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    db.Database.EnsureCreated();
+}
+
+// =============================================
+// MIDDLEWARE
+// =============================================
 app.UseSwagger();
 app.UseSwaggerUI();
-
 app.UseAuthentication();
 app.UseAuthorization();
-
-// =========================
-// 🧠 In-memory DB
-// =========================
-var products = new List<Product>();
-
-// =======================
-// ➕ CREATE PRODUCT
-// =======================
-app.MapPost("/products", (Product product) =>
-{
-    products.Add(product);
-    return Results.Ok(product);
-})
-.RequireAuthorization(policy => policy.RequireRole("Admin", "Manager"));
-
-// =======================
-// 📥 GET ALL PRODUCTS
-// =======================
-app.MapGet("/products", () => products)
-.RequireAuthorization();
-
-// =======================
-// 🔍 GET PRODUCT BY ID
-// =======================
-app.MapGet("/products/{id}", (int id) =>
-{
-    var product = products.FirstOrDefault(p => p.Id == id);
-    return product is not null ? Results.Ok(product) : Results.NotFound();
-})
-.RequireAuthorization();
-
-// =======================
-// ✏️ UPDATE PRODUCT
-// =======================
-app.MapPut("/products/{id}", (int id, Product updatedProduct) =>
-{
-    var index = products.FindIndex(p => p.Id == id);
-    if (index == -1) return Results.NotFound();
-
-    products[index] = updatedProduct;
-    return Results.Ok(updatedProduct);
-})
-.RequireAuthorization(policy => policy.RequireRole("Admin", "Manager"));
-
-// =======================
-// ❌ DELETE PRODUCT
-// =======================
-app.MapDelete("/products/{id}", (int id) =>
-{
-    var product = products.FirstOrDefault(p => p.Id == id);
-    if (product == null) return Results.NotFound();
-
-    products.Remove(product);
-    return Results.Ok("Deleted");
-})
-.RequireAuthorization(policy => policy.RequireRole("Admin"));
+app.MapControllers();
 
 app.Run();
