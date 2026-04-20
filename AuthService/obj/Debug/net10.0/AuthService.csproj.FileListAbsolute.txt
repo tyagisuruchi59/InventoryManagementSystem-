@@ -1,9 +1,0 @@
-C:\Users\suruc\OneDrive\Desktop\InventoryManagementSystem\AuthService\obj\Debug\net10.0\AuthService.csproj.AssemblyReference.cache
-C:\Users\suruc\OneDrive\Desktop\InventoryManagementSystem\AuthService\obj\Debug\net10.0\rpswa.dswa.cache.json
-C:\Users\suruc\OneDrive\Desktop\InventoryManagementSystem\AuthService\obj\Debug\net10.0\AuthService.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\suruc\OneDrive\Desktop\InventoryManagementSystem\AuthService\obj\Debug\net10.0\AuthService.AssemblyInfoInputs.cache
-C:\Users\suruc\OneDrive\Desktop\InventoryManagementSystem\AuthService\obj\Debug\net10.0\AuthService.AssemblyInfo.cs
-C:\Users\suruc\OneDrive\Desktop\InventoryManagementSystem\AuthService\obj\Debug\net10.0\AuthService.csproj.CoreCompileInputs.cache
-C:\Users\suruc\OneDrive\Desktop\InventoryManagementSystem\AuthService\obj\Debug\net10.0\AuthService.MvcApplicationPartsAssemblyInfo.cs
-C:\Users\suruc\OneDrive\Desktop\InventoryManagementSystem\AuthService\obj\Debug\net10.0\AuthService.MvcApplicationPartsAssemblyInfo.cache
-C:\Users\suruc\OneDrive\Desktop\InventoryManagementSystem\AuthService\obj\Debug\net10.0\AuthService.sourcelink.json

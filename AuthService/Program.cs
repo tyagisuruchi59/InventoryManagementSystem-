@@ -1,28 +1,49 @@
 // StockPro Inventory Management System
-// Service: Auth Service
-// Developer: Suru
+// Service: Auth Service | Entry Point
+// Developer: Suru | April 2026
+// Description: Configures all services, middleware, database connection
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
-using System.Security.Claims;
-
-// In-memory storage
-var users = new List<User>();
+using AuthService.Data;
+using AuthService.Repositories;
+using AuthService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// 🔐 Strong secret key
-var key = "MyVeryStrongSecretKeyForJwtAuth1234567890Secure";
+// =============================================
+// DATABASE - Connect to PostgreSQL
+// =============================================
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// =========================
-// SERVICES
-// =========================
+// =============================================
+// DEPENDENCY INJECTION - Register services
+// =============================================
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddScoped<IAuthService, AuthServiceImpl>();
+
+// =============================================
+// CONTROLLERS
+// =============================================
+builder.Services.AddControllers();
+
+// =============================================
+// SWAGGER WITH JWT SUPPORT
+// =============================================
 builder.Services.AddEndpointsApiExplorer();
-
 builder.Services.AddSwaggerGen(options =>
 {
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "StockPro Auth Service",
+        Version = "v1",
+        Description = "Authentication and Authorization for StockPro"
+    });
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
@@ -30,7 +51,7 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "Enter 'Bearer YOUR_TOKEN'"
+        Description = "Enter: Bearer YOUR_TOKEN"
     });
 
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
@@ -49,12 +70,12 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// 🔐 Authentication
-builder.Services.AddAuthentication(options =>
-{
-    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
-    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
-})
+// =============================================
+// JWT AUTHENTICATION
+// =============================================
+var key = "MyVeryStrongSecretKeyForJwtAuth1234567890Secure";
+
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
 {
     options.TokenValidationParameters = new TokenValidationParameters
@@ -67,89 +88,27 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// 🔐 Authorization
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// =========================
+// =============================================
+// AUTO CREATE DATABASE TABLES ON STARTUP
+// =============================================
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    // Creates tables automatically if they don't exist
+    db.Database.EnsureCreated();
+}
+
+// =============================================
 // MIDDLEWARE
-// =========================
+// =============================================
 app.UseSwagger();
 app.UseSwaggerUI();
-
 app.UseAuthentication();
 app.UseAuthorization();
-
-// =========================
-// REGISTER
-// =========================
-app.MapPost("/register", (User user) =>
-{
-    if (users.Any(u => u.Username == user.Username))
-        return Results.BadRequest("User already exists");
-
-    users.Add(user);
-    return Results.Ok($"User registered as {user.Role}");
-});
-
-// =========================
-// LOGIN
-// =========================
-app.MapPost("/login", (User loginUser) =>
-{
-    var user = users.FirstOrDefault(u =>
-        u.Username == loginUser.Username &&
-        u.Password == loginUser.Password);
-
-    if (user == null)
-        return Results.Unauthorized();
-
-    var token = GenerateJwtToken(user.Username, user.Role, key);
-    return Results.Ok(new { token });
-});
-
-// =========================
-// 🔐 PROTECTED API
-// =========================
-app.MapGet("/secure", (HttpContext context) =>
-{
-    var username = context.User.Identity?.Name;
-    var role = context.User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-
-    return $"Hello {username}, Role: {role}";
-})
-.RequireAuthorization();
-
-
-// =========================
-// 🔐 JWT TOKEN GENERATION (UPDATED)
-// =========================
-string GenerateJwtToken(string username, string role, string key)
-{
-    var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key));
-    var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-    var claims = new[]
-    {
-        new Claim(ClaimTypes.Name, username),
-        new Claim(ClaimTypes.Role, role),
-        new Claim("userId", Guid.NewGuid().ToString())
-    };
-
-    var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityToken(
-        claims: claims,
-        expires: DateTime.Now.AddHours(2),
-        signingCredentials: credentials
-    );
-
-    return new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().WriteToken(token);
-}
-app.MapGet("/admin", () => "Welcome Admin")
-   .RequireAuthorization(policy => policy.RequireRole("Admin"));
-   app.MapGet("/staff", () => "Welcome Staff")
-   .RequireAuthorization(policy => policy.RequireRole("Staff"));
-   app.MapGet("/manager", () => "Welcome Manager")
-   .RequireAuthorization(policy => policy.RequireRole("Manager"));
+app.MapControllers();
 
 app.Run();
