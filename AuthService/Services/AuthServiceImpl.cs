@@ -34,7 +34,7 @@ namespace AuthService.Services
             {
                 Username = dto.Username,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(dto.Password),
-                Role = dto.Role,
+                Role = dto.Role.ToUpper(),
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
