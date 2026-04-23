@@ -80,7 +80,7 @@ namespace ProductService.Controllers
 
         // POST /api/product - Create new product (Manager, Admin)
         [HttpPost]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "ADMIN,MANAGER")]
         public async Task<IActionResult> Create([FromBody] CreateProductDto dto)
         {
             var result = await _productService.CreateProductAsync(dto);
@@ -91,7 +91,7 @@ namespace ProductService.Controllers
 
         // PUT /api/product/{id} - Update product (Manager, Admin)
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin,Manager")]
+       [Authorize(Roles = "ADMIN,MANAGER")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateProductDto dto)
         {
             var result = await _productService.UpdateProductAsync(id, dto);
@@ -101,7 +101,7 @@ namespace ProductService.Controllers
 
         // PUT /api/product/{id}/deactivate - Deactivate product (Admin only)
         [HttpPut("{id}/deactivate")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> Deactivate(int id)
         {
             var result = await _productService.DeactivateProductAsync(id);

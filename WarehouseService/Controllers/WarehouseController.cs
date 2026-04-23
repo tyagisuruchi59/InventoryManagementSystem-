@@ -42,7 +42,7 @@ namespace WarehouseService.Controllers
 
         // POST /api/warehouse - Create warehouse (Admin only)
         [HttpPost]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> Create([FromBody] CreateWarehouseDto dto)
         {
             var result = await _warehouseService.CreateWarehouseAsync(dto);
@@ -51,7 +51,7 @@ namespace WarehouseService.Controllers
 
         // PUT /api/warehouse/{id} - Update warehouse (Admin only)
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin")]
+       [Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> Update(int id, [FromBody] CreateWarehouseDto dto)
         {
             var result = await _warehouseService.UpdateWarehouseAsync(id, dto);
@@ -61,7 +61,7 @@ namespace WarehouseService.Controllers
 
         // PUT /api/warehouse/{id}/deactivate - Deactivate warehouse (Admin only)
         [HttpPut("{id}/deactivate")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> Deactivate(int id)
         {
             var result = await _warehouseService.DeactivateWarehouseAsync(id);
@@ -80,7 +80,7 @@ namespace WarehouseService.Controllers
 
         // POST /api/warehouse/stock - Add or update stock level
         [HttpPost("stock")]
-        [Authorize(Roles = "Admin,Manager,Staff")]
+       [Authorize(Roles = "ADMIN,MANAGER,STAFF")]
         public async Task<IActionResult> AddOrUpdateStock([FromBody] StockLevelDto dto)
         {
             var result = await _warehouseService.AddOrUpdateStockAsync(dto);
@@ -89,7 +89,7 @@ namespace WarehouseService.Controllers
 
         // GET /api/warehouse/stock/lowstock - Get all low stock items
         [HttpGet("stock/lowstock")]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "ADMIN,MANAGER")]
         public async Task<IActionResult> GetLowStock()
         {
             var stock = await _warehouseService.GetLowStockAsync();
@@ -98,7 +98,7 @@ namespace WarehouseService.Controllers
 
         // GET /api/warehouse/stock/overstock - Get all overstock items
         [HttpGet("stock/overstock")]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "ADMIN,MANAGER")]
         public async Task<IActionResult> GetOverStock()
         {
             var stock = await _warehouseService.GetOverStockAsync();
@@ -107,7 +107,7 @@ namespace WarehouseService.Controllers
 
         // POST /api/warehouse/transfer - Transfer stock between warehouses
         [HttpPost("transfer")]
-        [Authorize(Roles = "Admin,Manager,Staff")]
+        [Authorize(Roles = "ADMIN,MANAGER,STAFF")]
         public async Task<IActionResult> Transfer([FromBody] TransferStockDto dto)
         {
             var result = await _warehouseService.TransferStockAsync(dto);

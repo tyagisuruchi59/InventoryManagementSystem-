@@ -89,7 +89,7 @@ namespace PurchaseService.Controllers
 
         // POST /api/purchase-orders - Create new PO
         [HttpPost]
-        [Authorize(Roles = "Admin,Manager,Officer")]
+        [Authorize(Roles = "Admin,Manager,OFFICER")]
         public async Task<IActionResult> Create([FromBody] CreatePODto dto)
         {
             var result = await _purchaseService.CreatePOAsync(dto);
@@ -98,7 +98,7 @@ namespace PurchaseService.Controllers
 
         // PUT /api/purchase-orders/{id} - Update PO
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin,Manager,Officer")]
+        [Authorize(Roles = "ADMIN,MANAGER,OFFICER")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdatePODto dto)
         {
             var result = await _purchaseService.UpdatePOAsync(id, dto);
@@ -108,7 +108,7 @@ namespace PurchaseService.Controllers
 
         // PUT /api/purchase-orders/{id}/approve - Approve PO
         [HttpPut("{id}/approve")]
-        [Authorize(Roles = "Admin,Manager")]
+       [Authorize(Roles = "ADMIN,MANAGER")]
         public async Task<IActionResult> Approve(int id)
         {
             var result = await _purchaseService.ApprovePOAsync(id);
@@ -119,7 +119,7 @@ namespace PurchaseService.Controllers
 
         // POST /api/purchase-orders/receive - Receive goods (GRN)
         [HttpPost("receive")]
-        [Authorize(Roles = "Admin,Manager,Staff")]
+        [Authorize(Roles = "ADMIN,MANAGER,STAFF")]
         public async Task<IActionResult> ReceiveGoods([FromBody] ReceiveGoodsDto dto)
         {
             var result = await _purchaseService.ReceiveGoodsAsync(dto);
@@ -130,7 +130,7 @@ namespace PurchaseService.Controllers
 
         // PUT /api/purchase-orders/{id}/cancel - Cancel PO
         [HttpPut("{id}/cancel")]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "ADMIN,MANAGER")]
         public async Task<IActionResult> Cancel(int id)
         {
             var result = await _purchaseService.CancelPOAsync(id);

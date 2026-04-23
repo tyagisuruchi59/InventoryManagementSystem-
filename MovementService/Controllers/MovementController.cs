@@ -26,7 +26,7 @@ namespace MovementService.Controllers
 
         // GET /api/movements - Get all movements (full audit trail)
         [HttpGet]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "ADMIN,MANAGER")]
         public async Task<IActionResult> GetAll()
         {
             var movements = await _movementService.GetAllMovementsAsync();
@@ -91,7 +91,7 @@ namespace MovementService.Controllers
 
         // GET /api/movements/stockin/{productId}/{warehouseId}
         [HttpGet("stockin/{productId}/{warehouseId}")]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "ADMIN,MANAGER")]
         public async Task<IActionResult> GetStockIn(int productId, int warehouseId)
         {
             var summary = await _movementService.GetStockInAsync(productId, warehouseId);
@@ -100,7 +100,7 @@ namespace MovementService.Controllers
 
         // GET /api/movements/stockout/{productId}/{warehouseId}
         [HttpGet("stockout/{productId}/{warehouseId}")]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "ADMIN,MANAGER")]
         public async Task<IActionResult> GetStockOut(int productId, int warehouseId)
         {
             var summary = await _movementService.GetStockOutAsync(productId, warehouseId);
@@ -109,7 +109,7 @@ namespace MovementService.Controllers
 
         // POST /api/movements - Record new movement (write once)
         [HttpPost]
-        [Authorize(Roles = "Admin,Manager,Staff")]
+        [Authorize(Roles = "ADMIN,MANAGER,STAFF")]
         public async Task<IActionResult> RecordMovement([FromBody] RecordMovementDto dto)
         {
             var result = await _movementService.RecordMovementAsync(dto);

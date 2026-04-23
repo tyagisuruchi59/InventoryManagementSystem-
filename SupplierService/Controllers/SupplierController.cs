@@ -71,7 +71,7 @@ namespace SupplierService.Controllers
 
         // GET /api/suppliers/count/active - Get active supplier count
         [HttpGet("count/active")]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "ADMIN,MANAGER")]
         public async Task<IActionResult> GetActiveCount()
         {
             var count = await _supplierService.GetActiveCountAsync();
@@ -80,7 +80,7 @@ namespace SupplierService.Controllers
 
         // POST /api/suppliers - Create new supplier (Admin, Manager only)
         [HttpPost]
-        [Authorize(Roles = "Admin,Manager")]
+        [Authorize(Roles = "ADMIN,MANAGER")]
         public async Task<IActionResult> Create([FromBody] CreateSupplierDto dto)
         {
             var result = await _supplierService.CreateSupplierAsync(dto);
@@ -91,7 +91,7 @@ namespace SupplierService.Controllers
 
         // PUT /api/suppliers/{id} - Update supplier (Admin, Manager only)
         [HttpPut("{id}")]
-        [Authorize(Roles = "Admin,Manager")]
+         [Authorize(Roles = "ADMIN,MANAGER")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateSupplierDto dto)
         {
             var result = await _supplierService.UpdateSupplierAsync(id, dto);
@@ -101,7 +101,7 @@ namespace SupplierService.Controllers
 
         // PUT /api/suppliers/{id}/deactivate - Deactivate supplier (Admin only)
         [HttpPut("{id}/deactivate")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> Deactivate(int id)
         {
             var result = await _supplierService.DeactivateSupplierAsync(id);
@@ -111,7 +111,7 @@ namespace SupplierService.Controllers
 
         // PUT /api/suppliers/{id}/rating - Update supplier rating
         [HttpPut("{id}/rating")]
-        [Authorize(Roles = "Admin,Manager")]
+         [Authorize(Roles = "ADMIN,MANAGER")]
         public async Task<IActionResult> UpdateRating(int id, [FromBody] UpdateRatingDto dto)
         {
             var result = await _supplierService.UpdateRatingAsync(id, dto);
@@ -121,7 +121,7 @@ namespace SupplierService.Controllers
 
         // DELETE /api/suppliers/{id} - Hard delete supplier (Admin only)
         [HttpDelete("{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> Delete(int id)
         {
             var result = await _supplierService.DeleteSupplierAsync(id);
