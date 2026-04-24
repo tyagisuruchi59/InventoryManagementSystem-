@@ -22,6 +22,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IPurchaseRepository, PurchaseRepository>();
 builder.Services.AddScoped<IPurchaseService, PurchaseServiceImpl>();
 
+// CORS - Allow React frontend
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReact", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
 // CONTROLLERS
 builder.Services.AddControllers();
 
@@ -86,9 +97,10 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
-// MIDDLEWARE
+// MIDDLEWARE - ORDER IS IMPORTANT!
 app.UseSwagger();
 app.UseSwaggerUI();
+app.UseCors("AllowReact");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

@@ -89,7 +89,7 @@ namespace PurchaseService.Controllers
 
         // POST /api/purchase-orders - Create new PO
         [HttpPost]
-        [Authorize(Roles = "Admin,Manager,OFFICER")]
+        [Authorize(Roles = "ADMIN,MANAGER,OFFICER")]
         public async Task<IActionResult> Create([FromBody] CreatePODto dto)
         {
             var result = await _purchaseService.CreatePOAsync(dto);
@@ -108,7 +108,7 @@ namespace PurchaseService.Controllers
 
         // PUT /api/purchase-orders/{id}/approve - Approve PO
         [HttpPut("{id}/approve")]
-       [Authorize(Roles = "ADMIN,MANAGER")]
+        [Authorize(Roles = "ADMIN,MANAGER")]
         public async Task<IActionResult> Approve(int id)
         {
             var result = await _purchaseService.ApprovePOAsync(id);

@@ -56,7 +56,11 @@ namespace PurchaseService.Services
 
         public async Task<List<POResponseDto>> GetPOsByDateRangeAsync(DateTime from, DateTime to)
         {
-            var pos = await _repo.GetByDateRangeAsync(from, to);
+            // UTC fix for date range queries
+            var pos = await _repo.GetByDateRangeAsync(
+                DateTime.SpecifyKind(from, DateTimeKind.Utc),
+                DateTime.SpecifyKind(to, DateTimeKind.Utc)
+            );
             return pos.Select(MapToDto).ToList();
         }
 
@@ -69,7 +73,8 @@ namespace PurchaseService.Services
                 WarehouseId = dto.WarehouseId,
                 CreatedById = dto.CreatedById,
                 Status = "Draft",
-                ExpectedDate = dto.ExpectedDate,
+                // UTC fix: convert ExpectedDate to UTC
+                ExpectedDate = DateTime.SpecifyKind(dto.ExpectedDate, DateTimeKind.Utc),
                 ReferenceNumber = dto.ReferenceNumber,
                 Notes = dto.Notes,
                 OrderDate = DateTime.UtcNow,
@@ -83,7 +88,6 @@ namespace PurchaseService.Services
                 }).ToList()
             };
 
-            // Calculate total amount
             po.TotalAmount = po.LineItems.Sum(l => l.Quantity * l.UnitCost);
 
             await _repo.AddAsync(po);
@@ -98,7 +102,8 @@ namespace PurchaseService.Services
             if (po == null) return false;
             if (po.Status != "Draft") return false;
 
-            po.ExpectedDate = dto.ExpectedDate;
+            // UTC fix for ExpectedDate on update
+            po.ExpectedDate = DateTime.SpecifyKind(dto.ExpectedDate, DateTimeKind.Utc);
             po.Notes = dto.Notes;
             po.ReferenceNumber = dto.ReferenceNumber;
 
@@ -131,22 +136,18 @@ namespace PurchaseService.Services
 
             foreach (var item in dto.ReceivedItems)
             {
-                // Find matching line item
                 var lineItem = po.LineItems.FirstOrDefault(l => l.Id == item.LineItemId);
                 if (lineItem == null) continue;
-
-                // Update received quantity
                 lineItem.ReceivedQty += item.ReceivedQty;
             }
 
-            // Check if all items fully received
             bool fullyReceived = po.LineItems.All(l => l.ReceivedQty >= l.Quantity);
             bool partiallyReceived = po.LineItems.Any(l => l.ReceivedQty > 0);
 
             if (fullyReceived)
             {
                 po.Status = "FullyReceived";
-                po.ReceivedDate = DateTime.UtcNow;
+                po.ReceivedDate = DateTime.UtcNow;  // UTC fix
             }
             else if (partiallyReceived)
             {

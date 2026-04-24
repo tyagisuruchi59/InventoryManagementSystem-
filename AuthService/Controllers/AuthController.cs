@@ -43,7 +43,7 @@ namespace AuthService.Controllers
 
         // GET /api/auth/users - Get all users (Admin only)
         [HttpGet("users")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> GetAllUsers()
         {
             var users = await _authService.GetAllUsersAsync();
@@ -52,7 +52,7 @@ namespace AuthService.Controllers
 
         // GET /api/auth/users/{id} - Get single user by ID (Admin only)
         [HttpGet("users/{id}")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> GetUserById(int id)
         {
             var user = await _authService.GetUserByIdAsync(id);
@@ -62,7 +62,7 @@ namespace AuthService.Controllers
 
         // PUT /api/auth/users/{id}/role - Change user role (Admin only)
         [HttpPut("users/{id}/role")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "ADMIN")]
         public async Task<IActionResult> UpdateRole(int id, [FromBody] UpdateRoleDto dto)
         {
             var result = await _authService.UpdateRoleAsync(id, dto.Role);
@@ -72,8 +72,8 @@ namespace AuthService.Controllers
 
         // PUT /api/auth/users/{id}/deactivate - Deactivate user (Admin only)
         [HttpPut("users/{id}/deactivate")]
-        [Authorize(Roles = "Admin")]
-        public async Task<IActionResult> DeactivateUser(int id)
+        [Authorize(Roles = "ADMIN")]
+                public async Task<IActionResult> DeactivateUser(int id)
         {
             var result = await _authService.DeactivateUserAsync(id);
             if (!result) return NotFound("User not found");

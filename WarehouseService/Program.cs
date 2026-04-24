@@ -1,7 +1,6 @@
 // StockPro Inventory Management System
 // Service: Warehouse Service | Entry Point
 // Developer: Suru | April 2026
-// Description: Configures database, JWT, services, middleware
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +20,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // DEPENDENCY INJECTION
 builder.Services.AddScoped<IWarehouseRepository, WarehouseRepository>();
 builder.Services.AddScoped<IWarehouseService, WarehouseServiceImpl>();
+
+// CORS - allow React frontend
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReact", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000", "http://localhost:3001")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
 // CONTROLLERS
 builder.Services.AddControllers();
@@ -60,7 +70,7 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// JWT AUTHENTICATION
+// JWT
 var key = "MyVeryStrongSecretKeyForJwtAuth1234567890Secure";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
@@ -83,12 +93,13 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    db.Database.EnsureCreated();
 }
 
-// MIDDLEWARE
+// MIDDLEWARE - ORDER MATTERS!
 app.UseSwagger();
 app.UseSwaggerUI();
+app.UseCors("AllowReact");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
