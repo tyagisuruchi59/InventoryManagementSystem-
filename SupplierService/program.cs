@@ -33,6 +33,19 @@ builder.Services.AddScoped<ISupplierService, SupplierServiceImpl>();
 builder.Services.AddControllers();
 
 // =============================================
+// CORS - Allow React frontend
+// =============================================
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowReact", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+// =============================================
 // SWAGGER WITH JWT SUPPORT
 // =============================================
 builder.Services.AddEndpointsApiExplorer();
@@ -104,6 +117,7 @@ using (var scope = app.Services.CreateScope())
 // =============================================
 app.UseSwagger();
 app.UseSwaggerUI();
+app.UseCors("AllowReact");        // ← CORS added here
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
