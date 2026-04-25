@@ -39,6 +39,7 @@ builder.Services.AddCors(options =>
 
 // CONTROLLERS
 builder.Services.AddControllers();
+builder.Services.AddHttpClient(); // ← ADD THIS LINE
 
 // SWAGGER WITH JWT
 builder.Services.AddEndpointsApiExplorer();

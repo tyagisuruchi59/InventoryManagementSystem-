@@ -2,10 +2,9 @@
 // Service: Alert Service | Background: LowStockChecker
 // Developer: Suru | April 2026
 // Description: IHostedService that runs every 15 minutes checking low stock
-//              This is the UNIQUE feature - automatic alert generation
+//              Calls Warehouse Service API for real data — no duplicate spam
 
-using AlertService.Data;
-using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 
 namespace AlertService.Services
 {
@@ -13,57 +12,90 @@ namespace AlertService.Services
     {
         private readonly IServiceProvider _serviceProvider;
         private readonly ILogger<LowStockBackgroundService> _logger;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        // Run every 15 minutes
         private readonly TimeSpan _interval = TimeSpan.FromMinutes(15);
 
         public LowStockBackgroundService(
             IServiceProvider serviceProvider,
-            ILogger<LowStockBackgroundService> logger)
+            ILogger<LowStockBackgroundService> logger,
+            IHttpClientFactory httpClientFactory)
         {
             _serviceProvider = serviceProvider;
             _logger = logger;
+            _httpClientFactory = httpClientFactory;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
             _logger.LogInformation("Low Stock Background Service started");
 
-            // Keep running until application stops
             while (!stoppingToken.IsCancellationRequested)
             {
-                try
-                {
-                    await CheckLowStockAsync();
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error checking low stock");
-                }
+                try { await CheckLowStockAsync(); }
+                catch (Exception ex) { _logger.LogError(ex, "Error in low stock check"); }
 
-                // Wait 15 minutes before next check
                 await Task.Delay(_interval, stoppingToken);
             }
         }
 
         private async Task CheckLowStockAsync()
         {
-            // Create a new scope for database access
-            using var scope = _serviceProvider.CreateScope();
-            var alertService = scope.ServiceProvider.GetRequiredService<IAlertService>();
-
             _logger.LogInformation("Checking low stock at {time}", DateTime.UtcNow);
 
-            // In real system: call Warehouse Service API to get low stock items
-            // For now: log that check ran successfully
-            _logger.LogInformation("Low stock check completed at {time}", DateTime.UtcNow);
+            try
+            {
+                // Call Warehouse Service to get real low stock items
+                var client = _httpClientFactory.CreateClient();
+                var response = await client.GetAsync("http://localhost:5002/api/warehouse/stock/lowstock");
 
-            // Example: trigger alert for demonstration
-            await alertService.SendLowStockAlertAsync(
-                productId: 0,
-                warehouseId: 0,
-                quantity: 0
-            );
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogWarning("Could not reach Warehouse Service — skipping alert generation");
+                    return;
+                }
+
+                var json = await response.Content.ReadAsStringAsync();
+                var items = JsonSerializer.Deserialize<List<StockItem>>(json,
+                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+                if (items == null || items.Count == 0)
+                {
+                    _logger.LogInformation("No low stock items found — no alerts needed");
+                    return;
+                }
+
+                using var scope = _serviceProvider.CreateScope();
+                var alertService = scope.ServiceProvider.GetRequiredService<IAlertService>();
+
+                // Send one alert per low stock item only
+                foreach (var item in items)
+                {
+                    await alertService.SendLowStockAlertAsync(
+                        productId: item.ProductId,
+                        warehouseId: item.WarehouseId,
+                        quantity: item.Quantity
+                    );
+                    _logger.LogInformation(
+                        "Alert sent: Product #{pid} Warehouse #{wid} has {qty} units (below reorder level)",
+                        item.ProductId, item.WarehouseId, item.Quantity);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to fetch low stock data from Warehouse Service");
+            }
+
+            _logger.LogInformation("Low stock check completed at {time}", DateTime.UtcNow);
+        }
+
+        // Matches Warehouse Service stock response
+        private class StockItem
+        {
+            public int ProductId { get; set; }
+            public int WarehouseId { get; set; }
+            public int Quantity { get; set; }
+            public int ReorderLevel { get; set; }
         }
     }
 }
