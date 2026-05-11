@@ -14,8 +14,8 @@ using ReportService.Services;
 using Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.UseUrls("http://0.0.0.0:80");
-builder.WebHost.UseUrls("http://0.0.0.0:80");
+builder.WebHost.UseUrls("http://0.0.0.0:8080");
+builder.WebHost.UseUrls("http://0.0.0.0:8080");
 
 // DATABASE
 builder.Services.AddDbContext<AppDbContext>(options =>

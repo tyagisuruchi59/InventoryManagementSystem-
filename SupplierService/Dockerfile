@@ -3,7 +3,7 @@ WORKDIR /src
 
 COPY . .
 
-RUN dotnet restore InventoryManagementSystem.sln
+RUN dotnet restore SupplierService/SupplierService.csproj
 RUN dotnet publish SupplierService/SupplierService.csproj -c Release -o /app/publish /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final

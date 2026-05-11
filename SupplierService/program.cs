@@ -14,7 +14,7 @@ using SupplierService.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // CRITICAL: Force port 80 inside Docker
-builder.WebHost.UseUrls("http://0.0.0.0:80");
+builder.WebHost.UseUrls("http://0.0.0.0:8080");
 
 // DATABASE
 builder.Services.AddDbContext<AppDbContext>(options =>
