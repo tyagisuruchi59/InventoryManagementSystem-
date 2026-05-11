@@ -1,0 +1,219 @@
+services:
+
+  postgres:
+    image: postgres:15
+    container_name: stockpro-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - stockpro-network
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: stockpro-rabbitmq
+    restart: always
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: stockpro
+      RABBITMQ_DEFAULT_PASS: StockPro@2026
+    networks:
+      - stockpro-network
+
+  api-gateway:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    container_name: stockpro-gateway
+    restart: always
+    working_dir: /app
+    volumes:
+      - ./ApiGateway:/app
+    command: dotnet run
+    ports:
+      - "5010:80"
+    environment:
+      ASPNETCORE_URLS: http://0.0.0.0:80
+    depends_on:
+      - auth-service
+      - product-service
+      - warehouse-service
+      - purchase-service
+      - supplier-service
+      - movement-service
+      - alert-service
+      - report-service
+    networks:
+      - stockpro-network
+
+  auth-service:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    container_name: auth-service
+    restart: always
+    working_dir: /app
+    volumes:
+      - ./AuthService:/app
+    command: dotnet run
+    ports:
+      - "5000:80"
+    environment:
+      ASPNETCORE_URLS: http://0.0.0.0:80
+      ConnectionStrings__DefaultConnection: Host=postgres;Database=authdb;Username=postgres;Password=postgres123
+    depends_on:
+      - postgres
+    networks:
+      - stockpro-network
+
+  product-service:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    container_name: product-service
+    restart: always
+    working_dir: /app
+    volumes:
+      - ./ProductService:/app
+    command: dotnet run
+    ports:
+      - "5001:80"
+    environment:
+      ASPNETCORE_URLS: http://0.0.0.0:80
+      ConnectionStrings__DefaultConnection: Host=postgres;Database=productdb;Username=postgres;Password=postgres123
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: stockpro
+      RabbitMQ__Password: StockPro@2026
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - stockpro-network
+
+  warehouse-service:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    container_name: warehouse-service
+    restart: always
+    working_dir: /app
+    volumes:
+      - ./WarehouseService:/app
+    command: dotnet run
+    ports:
+      - "5002:80"
+    environment:
+      ASPNETCORE_URLS: http://0.0.0.0:80
+      ConnectionStrings__DefaultConnection: Host=postgres;Database=warehousedb;Username=postgres;Password=postgres123
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: stockpro
+      RabbitMQ__Password: StockPro@2026
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - stockpro-network
+
+  purchase-service:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    container_name: purchase-service
+    restart: always
+    working_dir: /app
+    volumes:
+      - ./PurchaseService:/app
+    command: dotnet run
+    ports:
+      - "5004:80"
+    environment:
+      ASPNETCORE_URLS: http://0.0.0.0:80
+      ConnectionStrings__DefaultConnection: Host=postgres;Database=purchasedb;Username=postgres;Password=postgres123
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: stockpro
+      RabbitMQ__Password: StockPro@2026
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - stockpro-network
+
+  supplier-service:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    container_name: supplier-service
+    restart: always
+    working_dir: /app
+    volumes:
+      - ./SupplierService:/app
+    command: dotnet run
+    ports:
+      - "5005:80"
+    environment:
+      ASPNETCORE_URLS: http://0.0.0.0:80
+      ConnectionStrings__DefaultConnection: Host=postgres;Database=supplierdb;Username=postgres;Password=postgres123
+    depends_on:
+      - postgres
+    networks:
+      - stockpro-network
+
+  movement-service:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    container_name: movement-service
+    restart: always
+    working_dir: /app
+    volumes:
+      - ./MovementService:/app
+    command: dotnet run
+    ports:
+      - "5006:80"
+    environment:
+      ASPNETCORE_URLS: http://0.0.0.0:80
+      ConnectionStrings__DefaultConnection: Host=postgres;Database=movementdb;Username=postgres;Password=postgres123
+    depends_on:
+      - postgres
+    networks:
+      - stockpro-network
+
+  alert-service:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    container_name: alert-service
+    restart: always
+    working_dir: /app
+    volumes:
+      - ./AlertService:/app
+    command: dotnet run
+    ports:
+      - "5007:80"
+    environment:
+      ASPNETCORE_URLS: http://0.0.0.0:80
+      ConnectionStrings__DefaultConnection: Host=postgres;Database=alertdb;Username=postgres;Password=postgres123
+      RabbitMQ__Host: rabbitmq
+      RabbitMQ__Username: stockpro
+      RabbitMQ__Password: StockPro@2026
+    depends_on:
+      - postgres
+      - rabbitmq
+    networks:
+      - stockpro-network
+
+  report-service:
+    image: mcr.microsoft.com/dotnet/sdk:8.0
+    container_name: report-service
+    restart: always
+    working_dir: /app
+    volumes:
+      - ./ReportService:/app
+    command: dotnet run
+    ports:
+      - "5008:80"
+    environment:
+      ASPNETCORE_URLS: http://0.0.0.0:80
+      ConnectionStrings__DefaultConnection: Host=postgres;Database=reportdb;Username=postgres;Password=postgres123
+    depends_on:
+      - postgres
+    networks:
+      - stockpro-network
+
+volumes:
+  pgdata:
+
+networks:
+  stockpro-network:
+    driver: bridge

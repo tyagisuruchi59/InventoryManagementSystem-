@@ -18,6 +18,7 @@ namespace PurchaseService.Services
         Task<List<POResponseDto>> GetPOsByDateRangeAsync(DateTime from, DateTime to);
         Task<string> CreatePOAsync(CreatePODto dto);
         Task<bool> UpdatePOAsync(int id, UpdatePODto dto);
+        Task<string> SubmitPOAsync(int id);
         Task<string> ApprovePOAsync(int id);
         Task<string> ReceiveGoodsAsync(ReceiveGoodsDto dto);
         Task<string> CancelPOAsync(int id);

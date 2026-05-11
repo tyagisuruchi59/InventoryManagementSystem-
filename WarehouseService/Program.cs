@@ -2,6 +2,7 @@
 // Service: Warehouse Service | Entry Point
 // Developer: Suru | April 2026
 
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -10,18 +11,21 @@ using System.Text;
 using WarehouseService.Data;
 using WarehouseService.Repositories;
 using WarehouseService.Services;
+using WarehouseService.Publishers;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseUrls("http://0.0.0.0:80");
 
 // DATABASE
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // DEPENDENCY INJECTION
+
 builder.Services.AddScoped<IWarehouseRepository, WarehouseRepository>();
 builder.Services.AddScoped<IWarehouseService, WarehouseServiceImpl>();
-
-// CORS - allow React frontend
+builder.Services.AddScoped<LowStockPublisher>();
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReact", policy =>
@@ -34,6 +38,19 @@ builder.Services.AddCors(options =>
 
 // CONTROLLERS
 builder.Services.AddControllers();
+
+// MASSTRANSIT - RABBITMQ
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host(builder.Configuration["RabbitMQ__Host"] ?? "rabbitmq", "/", h =>
+        {
+            h.Username(builder.Configuration["RabbitMQ__User"] ?? "stockpro");
+            h.Password(builder.Configuration["RabbitMQ__Pass"] ?? "StockPro@2026");
+        });
+    });
+});
 
 // SWAGGER WITH JWT
 builder.Services.AddEndpointsApiExplorer();
@@ -96,7 +113,7 @@ using (var scope = app.Services.CreateScope())
     db.Database.EnsureCreated();
 }
 
-// MIDDLEWARE - ORDER MATTERS!
+// MIDDLEWARE
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseCors("AllowReact");

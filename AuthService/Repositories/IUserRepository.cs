@@ -6,6 +6,7 @@
 using AuthService.Models;
 
 namespace AuthService.Repositories
+
 {
     public interface IUserRepository
     {

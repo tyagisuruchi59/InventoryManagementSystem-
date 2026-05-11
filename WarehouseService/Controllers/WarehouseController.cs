@@ -89,6 +89,7 @@ namespace WarehouseService.Controllers
 
         // GET /api/warehouse/stock/lowstock - Get all low stock items
         [HttpGet("stock/lowstock")]
+        [AllowAnonymous]
         [Authorize(Roles = "ADMIN,MANAGER")]
         public async Task<IActionResult> GetLowStock()
         {

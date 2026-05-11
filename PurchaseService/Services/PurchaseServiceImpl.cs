@@ -1,10 +1,10 @@
-// StockPro Inventory Management System
+﻿// StockPro Inventory Management System
 // Service: Purchase Service | Service: Implementation
 // Developer: Suru | April 2026
-// Description: Business logic for purchase order lifecycle management
 
 using PurchaseService.DTOs;
 using PurchaseService.Models;
+using PurchaseService.Publishers;
 using PurchaseService.Repositories;
 
 namespace PurchaseService.Services
@@ -12,10 +12,17 @@ namespace PurchaseService.Services
     public class PurchaseServiceImpl : IPurchaseService
     {
         private readonly IPurchaseRepository _repo;
+        private readonly POApprovedPublisher _poApprovedPublisher;
+        private readonly POSubmittedPublisher _poSubmittedPublisher;
 
-        public PurchaseServiceImpl(IPurchaseRepository repo)
+        public PurchaseServiceImpl(
+            IPurchaseRepository repo,
+            POApprovedPublisher poApprovedPublisher,
+            POSubmittedPublisher poSubmittedPublisher)
         {
             _repo = repo;
+            _poApprovedPublisher = poApprovedPublisher;
+            _poSubmittedPublisher = poSubmittedPublisher;
         }
 
         public async Task<List<POResponseDto>> GetAllPOsAsync()
@@ -56,7 +63,6 @@ namespace PurchaseService.Services
 
         public async Task<List<POResponseDto>> GetPOsByDateRangeAsync(DateTime from, DateTime to)
         {
-            // UTC fix for date range queries
             var pos = await _repo.GetByDateRangeAsync(
                 DateTime.SpecifyKind(from, DateTimeKind.Utc),
                 DateTime.SpecifyKind(to, DateTimeKind.Utc)
@@ -64,7 +70,6 @@ namespace PurchaseService.Services
             return pos.Select(MapToDto).ToList();
         }
 
-        // CREATE PO - starts as Draft
         public async Task<string> CreatePOAsync(CreatePODto dto)
         {
             var po = new PurchaseOrder
@@ -73,7 +78,6 @@ namespace PurchaseService.Services
                 WarehouseId = dto.WarehouseId,
                 CreatedById = dto.CreatedById,
                 Status = "Draft",
-                // UTC fix: convert ExpectedDate to UTC
                 ExpectedDate = DateTime.SpecifyKind(dto.ExpectedDate, DateTimeKind.Utc),
                 ReferenceNumber = dto.ReferenceNumber,
                 Notes = dto.Notes,
@@ -87,32 +91,49 @@ namespace PurchaseService.Services
                     ReceivedQty = 0
                 }).ToList()
             };
-
             po.TotalAmount = po.LineItems.Sum(l => l.Quantity * l.UnitCost);
-
             await _repo.AddAsync(po);
             await _repo.SaveChangesAsync();
             return "Purchase order created successfully";
         }
 
-        // UPDATE PO - only allowed in Draft status
         public async Task<bool> UpdatePOAsync(int id, UpdatePODto dto)
         {
             var po = await _repo.GetByIdAsync(id);
             if (po == null) return false;
             if (po.Status != "Draft") return false;
-
-            // UTC fix for ExpectedDate on update
             po.ExpectedDate = DateTime.SpecifyKind(dto.ExpectedDate, DateTimeKind.Utc);
             po.Notes = dto.Notes;
             po.ReferenceNumber = dto.ReferenceNumber;
-
             await _repo.UpdateAsync(po);
             await _repo.SaveChangesAsync();
             return true;
         }
 
-        // APPROVE PO - moves from Draft/Pending to Approved
+        public async Task<string> SubmitPOAsync(int id)
+        {
+            var po = await _repo.GetByIdAsync(id);
+            if (po == null) return "Purchase order not found";
+            if (po.Status != "Draft")
+                return $"Cannot submit — PO is currently '{po.Status}'. Only Draft POs can be submitted.";
+
+            po.Status = "Pending";
+            await _repo.UpdateAsync(po);
+            await _repo.SaveChangesAsync();
+
+            // Publish POPendingEvent to RabbitMQ
+            await _poSubmittedPublisher.PublishPOSubmittedAsync(
+                poId: po.Id,
+                referenceNumber: po.ReferenceNumber ?? $"PO-{po.Id}",
+                supplierId: po.SupplierId,
+                warehouseId: po.WarehouseId,
+                totalAmount: po.TotalAmount,
+                submittedBy: $"User #{po.CreatedById}"
+            );
+
+            return "Purchase order submitted successfully";
+        }
+
         public async Task<string> ApprovePOAsync(int id)
         {
             var po = await _repo.GetByIdAsync(id);
@@ -123,10 +144,19 @@ namespace PurchaseService.Services
             po.Status = "Approved";
             await _repo.UpdateAsync(po);
             await _repo.SaveChangesAsync();
+
+            await _poApprovedPublisher.PublishPOApprovedAsync(
+                poId: po.Id,
+                referenceNumber: po.ReferenceNumber ?? $"PO-{po.Id}",
+                supplierId: po.SupplierId,
+                warehouseId: po.WarehouseId,
+                totalAmount: po.TotalAmount,
+                approvedBy: $"User #{po.CreatedById}"
+            );
+
             return "Purchase order approved successfully";
         }
 
-        // RECEIVE GOODS - records quantities received per line item
         public async Task<string> ReceiveGoodsAsync(ReceiveGoodsDto dto)
         {
             var po = await _repo.GetByIdAsync(dto.PurchaseOrderId);
@@ -144,35 +174,25 @@ namespace PurchaseService.Services
             bool fullyReceived = po.LineItems.All(l => l.ReceivedQty >= l.Quantity);
             bool partiallyReceived = po.LineItems.Any(l => l.ReceivedQty > 0);
 
-            if (fullyReceived)
-            {
-                po.Status = "FullyReceived";
-                po.ReceivedDate = DateTime.UtcNow;  // UTC fix
-            }
-            else if (partiallyReceived)
-            {
-                po.Status = "PartiallyReceived";
-            }
+            if (fullyReceived) { po.Status = "FullyReceived"; po.ReceivedDate = DateTime.UtcNow; }
+            else if (partiallyReceived) { po.Status = "PartiallyReceived"; }
 
             await _repo.UpdateAsync(po);
             await _repo.SaveChangesAsync();
             return "Goods received successfully";
         }
 
-        // CANCEL PO - only Draft or Pending can be cancelled
         public async Task<string> CancelPOAsync(int id)
         {
             var po = await _repo.GetByIdAsync(id);
             if (po == null) return "PO not found";
             if (po.Status == "FullyReceived") return "Cannot cancel a fully received PO";
-
             po.Status = "Cancelled";
             await _repo.UpdateAsync(po);
             await _repo.SaveChangesAsync();
             return "Purchase order cancelled successfully";
         }
 
-        // MAP PurchaseOrder to POResponseDto
         private POResponseDto MapToDto(PurchaseOrder po)
         {
             return new POResponseDto

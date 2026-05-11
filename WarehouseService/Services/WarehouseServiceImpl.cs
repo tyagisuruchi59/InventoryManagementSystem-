@@ -5,6 +5,7 @@
 
 using WarehouseService.DTOs;
 using WarehouseService.Models;
+using WarehouseService.Publishers;
 using WarehouseService.Repositories;
 
 namespace WarehouseService.Services
@@ -12,10 +13,12 @@ namespace WarehouseService.Services
     public class WarehouseServiceImpl : IWarehouseService
     {
         private readonly IWarehouseRepository _repo;
+        private readonly LowStockPublisher _lowStockPublisher;
 
-        public WarehouseServiceImpl(IWarehouseRepository repo)
+        public WarehouseServiceImpl(IWarehouseRepository repo, LowStockPublisher lowStockPublisher)
         {
             _repo = repo;
+            _lowStockPublisher = lowStockPublisher;
         }
 
         public async Task<List<Warehouse>> GetAllWarehousesAsync()
@@ -73,22 +76,33 @@ namespace WarehouseService.Services
 
         public async Task<string> AddOrUpdateStockAsync(StockLevelDto dto)
         {
-            // Check if stock record already exists
             var existing = await _repo.GetStockLevelAsync(dto.WarehouseId, dto.ProductId);
 
             if (existing != null)
             {
-                // Update existing stock
                 existing.Quantity += dto.Quantity;
                 existing.ReservedQuantity = dto.ReservedQuantity;
                 existing.ReorderLevel = dto.ReorderLevel;
                 existing.MaxStockLevel = dto.MaxStockLevel;
                 existing.UpdatedAt = DateTime.UtcNow;
                 await _repo.UpdateStockLevelAsync(existing);
+
+                // 🐇 RABBITMQ — Publish LowStockEvent if stock drops below reorder level
+                if (existing.Quantity < existing.ReorderLevel)
+                {
+                    var warehouse = await _repo.GetByIdAsync(dto.WarehouseId);
+                    await _lowStockPublisher.PublishLowStockAsync(
+                        productId: dto.ProductId,
+                        productName: $"Product #{dto.ProductId}",
+                        currentQty: existing.Quantity,
+                        reorderLevel: existing.ReorderLevel,
+                        warehouseId: dto.WarehouseId,
+                        warehouseName: warehouse?.Name ?? $"Warehouse #{dto.WarehouseId}"
+                    );
+                }
             }
             else
             {
-                // Create new stock record
                 var stockLevel = new StockLevel
                 {
                     WarehouseId = dto.WarehouseId,
@@ -100,6 +114,20 @@ namespace WarehouseService.Services
                     UpdatedAt = DateTime.UtcNow
                 };
                 await _repo.AddStockLevelAsync(stockLevel);
+
+                // 🐇 RABBITMQ — Publish LowStockEvent for new stock if already below reorder level
+                if (dto.Quantity < dto.ReorderLevel)
+                {
+                    var warehouse = await _repo.GetByIdAsync(dto.WarehouseId);
+                    await _lowStockPublisher.PublishLowStockAsync(
+                        productId: dto.ProductId,
+                        productName: $"Product #{dto.ProductId}",
+                        currentQty: dto.Quantity,
+                        reorderLevel: dto.ReorderLevel,
+                        warehouseId: dto.WarehouseId,
+                        warehouseName: warehouse?.Name ?? $"Warehouse #{dto.WarehouseId}"
+                    );
+                }
             }
 
             await _repo.SaveChangesAsync();
@@ -114,19 +142,29 @@ namespace WarehouseService.Services
 
         public async Task<string> TransferStockAsync(TransferStockDto dto)
         {
-            // Get stock in source warehouse
             var fromStock = await _repo.GetStockLevelAsync(dto.FromWarehouseId, dto.ProductId);
 
-            // Check if enough stock available
             if (fromStock == null || fromStock.AvailableQuantity < dto.Quantity)
                 return "Not enough stock in source warehouse";
 
-            // Deduct from source warehouse
             fromStock.Quantity -= dto.Quantity;
             fromStock.UpdatedAt = DateTime.UtcNow;
             await _repo.UpdateStockLevelAsync(fromStock);
 
-            // Add to destination warehouse
+            // 🐇 RABBITMQ — Publish LowStockEvent after transfer if source drops below reorder level
+            if (fromStock.Quantity < fromStock.ReorderLevel)
+            {
+                var warehouse = await _repo.GetByIdAsync(dto.FromWarehouseId);
+                await _lowStockPublisher.PublishLowStockAsync(
+                    productId: dto.ProductId,
+                    productName: $"Product #{dto.ProductId}",
+                    currentQty: fromStock.Quantity,
+                    reorderLevel: fromStock.ReorderLevel,
+                    warehouseId: dto.FromWarehouseId,
+                    warehouseName: warehouse?.Name ?? $"Warehouse #{dto.FromWarehouseId}"
+                );
+            }
+
             var toStock = await _repo.GetStockLevelAsync(dto.ToWarehouseId, dto.ProductId);
             if (toStock != null)
             {
@@ -145,7 +183,6 @@ namespace WarehouseService.Services
                 });
             }
 
-            // Record transfer history
             await _repo.AddTransferAsync(new StockTransfer
             {
                 ProductId = dto.ProductId,

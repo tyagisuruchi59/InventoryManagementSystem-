@@ -11,8 +11,11 @@ using System.Text;
 using ReportService.Data;
 using ReportService.Repositories;
 using ReportService.Services;
+using Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseUrls("http://0.0.0.0:80");
+builder.WebHost.UseUrls("http://0.0.0.0:80");
 
 // DATABASE
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -24,6 +27,19 @@ builder.Services.AddScoped<IReportService, ReportServiceImpl>();
 
 // BACKGROUND SERVICE - takes daily snapshot automatically
 builder.Services.AddHostedService<SnapshotBackgroundService>();
+
+// QUARTZ.NET - SCHEDULED JOBS
+builder.Services.AddQuartz(q =>
+{
+    var jobKey = new JobKey("DailySnapshotJob");
+    q.AddJob<DailySnapshotJob>(opts => opts.WithIdentity(jobKey));
+    q.AddTrigger(opts => opts
+        .ForJob(jobKey)
+        .WithIdentity("DailySnapshotJob-trigger")
+        .WithCronSchedule("0 0 0 * * ?") // runs every day at midnight
+    );
+});
+builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
 
 // CORS
 builder.Services.AddCors(options =>

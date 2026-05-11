@@ -1,4 +1,4 @@
-// StockPro Inventory Management System
+﻿// StockPro Inventory Management System
 // Service: Alert Service | Service: Interface
 // Developer: Suru | April 2026
 // Description: Defines business logic operations for alerts
@@ -22,5 +22,6 @@ namespace AlertService.Services
         Task<bool> MarkAllReadAsync(int recipientId);
         Task<bool> AcknowledgeAsync(int alertId);
         Task<bool> DeleteAlertAsync(int alertId);
+        Task SendEmailAsync(string toEmail, string subject, string message);
     }
 }

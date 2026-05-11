@@ -1,8 +1,6 @@
 // StockPro Inventory Management System
 // Service: Supplier Service | Entry Point
 // Developer: Suru | April 2026
-// Description: Configures PostgreSQL database, JWT authentication,
-// dependency injection, Swagger, and middleware pipeline.
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -15,29 +13,21 @@ using SupplierService.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// =============================================
-// DATABASE - Connect to PostgreSQL supplierdb
-// =============================================
+// CRITICAL: Force port 80 inside Docker
+builder.WebHost.UseUrls("http://0.0.0.0:80");
+
+// DATABASE
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// =============================================
 // DEPENDENCY INJECTION
-// =============================================
 builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
 builder.Services.AddScoped<ISupplierService, SupplierServiceImpl>();
 
-// =============================================
-// CONTROLLERS
-// =============================================
-builder.Services.AddControllers();
-
-// =============================================
-// CORS - Allow React frontend
-// =============================================
+// CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReact", policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
         policy.AllowAnyOrigin()
               .AllowAnyHeader()
@@ -45,9 +35,10 @@ builder.Services.AddCors(options =>
     });
 });
 
-// =============================================
-// SWAGGER WITH JWT SUPPORT
-// =============================================
+// CONTROLLERS
+builder.Services.AddControllers();
+
+// SWAGGER WITH JWT
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -82,42 +73,41 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// =============================================
-// JWT AUTHENTICATION - same key as all services
-// =============================================
+// JWT
 var key = "MyVeryStrongSecretKeyForJwtAuth1234567890Secure";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-.AddJwtBearer(options =>
-{
-    options.TokenValidationParameters = new TokenValidationParameters
+    .AddJwtBearer(options =>
     {
-        ValidateIssuer = false,
-        ValidateAudience = false,
-        ValidateIssuerSigningKey = true,
-        ValidateLifetime = true,
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
-    };
-});
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = false,
+            ValidateAudience = false,
+            ValidateIssuerSigningKey = true,
+            ValidateLifetime = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key))
+        };
+    });
 
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
 
-// =============================================
-// AUTO MIGRATE DATABASE ON STARTUP
-// =============================================
-using (var scope = app.Services.CreateScope())
+// AUTO MIGRATE
+try
 {
+    using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
 }
+catch (Exception ex)
+{
+    Console.WriteLine($"[DB MIGRATION] {ex.Message}");
+}
 
-// =============================================
-// MIDDLEWARE PIPELINE
-// =============================================
+// MIDDLEWARE ORDER (do not change)
+app.UseCors("AllowAll");
 app.UseSwagger();
 app.UseSwaggerUI();
-app.UseCors("AllowReact");        // ← CORS added here
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

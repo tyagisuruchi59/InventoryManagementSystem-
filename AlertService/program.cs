@@ -1,18 +1,21 @@
-// StockPro Inventory Management System
+﻿// StockPro Inventory Management System
 // Service: Alert Service | Entry Point
 // Developer: Suru | April 2026
-// Description: Configures database, JWT, background service, middleware
 
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using System.Text;
+using AlertService.Consumers;
 using AlertService.Data;
 using AlertService.Repositories;
 using AlertService.Services;
+using Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseUrls("http://0.0.0.0:80");
 
 // DATABASE
 builder.Services.AddDbContext<AppDbContext>(options =>
@@ -22,16 +25,29 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IAlertRepository, AlertRepository>();
 builder.Services.AddScoped<IAlertService, AlertServiceImpl>();
 
-// BACKGROUND SERVICE - runs every 15 minutes checking low stock
-// This is the unique IHostedService feature from documentation
+// BACKGROUND SERVICE
 builder.Services.AddHostedService<LowStockBackgroundService>();
 
-// CORS - allow React frontend
+// QUARTZ.NET
+builder.Services.AddQuartz(q =>
+{
+    var jobKey = new JobKey("OverduePOAlertJob");
+    q.AddJob<OverduePOAlertJob>(opts => opts.WithIdentity(jobKey));
+
+    q.AddTrigger(opts => opts
+        .ForJob(jobKey)
+        .WithIdentity("OverduePOAlertJob-trigger")
+        .WithCronSchedule("0 0 9 * * ?")
+    );
+});
+builder.Services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+
+// CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReact", policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
+        policy.AllowAnyOrigin()
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -39,27 +55,46 @@ builder.Services.AddCors(options =>
 
 // CONTROLLERS
 builder.Services.AddControllers();
-builder.Services.AddHttpClient(); // ← ADD THIS LINE
+builder.Services.AddHttpClient();
 
-// SWAGGER WITH JWT
+// MASSTRANSIT - RABBITMQ
+builder.Services.AddMassTransit(x =>
+{
+    x.AddConsumer<LowStockEventConsumer>();
+    x.AddConsumer<POApprovedEventConsumer>();
+    x.AddConsumer<POSubmittedEventConsumer>();
+
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host(builder.Configuration["RabbitMQ__Host"] ?? "rabbitmq", "/", h =>
+        {
+            h.Username(builder.Configuration["RabbitMQ__Username"] ?? "stockpro");
+            h.Password(builder.Configuration["RabbitMQ__Password"] ?? "StockPro@2026");
+        });
+
+        cfg.ConfigureEndpoints(context);
+    });
+});
+
+// SWAGGER
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
     options.SwaggerDoc("v1", new OpenApiInfo
     {
         Title = "StockPro Alert Service",
-        Version = "v1",
-        Description = "Alert and Notification Management for StockPro"
+        Version = "v1"
     });
+
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",
         Type = SecuritySchemeType.Http,
         Scheme = "bearer",
         BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "Enter: Bearer YOUR_TOKEN"
+        In = ParameterLocation.Header
     });
+
     options.AddSecurityRequirement(new OpenApiSecurityRequirement
     {
         {
@@ -76,7 +111,7 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// JWT AUTHENTICATION
+// JWT
 var key = "MyVeryStrongSecretKeyForJwtAuth1234567890Secure";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
@@ -102,8 +137,7 @@ using (var scope = app.Services.CreateScope())
     db.Database.EnsureCreated();
 }
 
-// MIDDLEWARE
-app.UseCors("AllowReact");
+app.UseCors("AllowAll");
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseAuthentication();

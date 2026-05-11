@@ -1,5 +1,13 @@
-**/bin/
-**/obj/
+bin/
+obj/
 .vs/
+.vscode/
+node_modules/
 *.user
+*.suo
+*.cache
+*.dll
+*.pdb
+*.exe
+TestResults/
 appsettings.Development.json

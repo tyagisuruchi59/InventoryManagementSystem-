@@ -21,7 +21,7 @@ namespace PurchaseService.Controllers
             _purchaseService = purchaseService;
         }
 
-        // GET /api/purchase-orders - Get all POs
+        // GET /api/purchase-orders
         [HttpGet]
         [Authorize]
         public async Task<IActionResult> GetAll()
@@ -30,7 +30,7 @@ namespace PurchaseService.Controllers
             return Ok(pos);
         }
 
-        // GET /api/purchase-orders/{id} - Get PO by ID
+        // GET /api/purchase-orders/{id}
         [HttpGet("{id}")]
         [Authorize]
         public async Task<IActionResult> GetById(int id)
@@ -87,7 +87,7 @@ namespace PurchaseService.Controllers
             return Ok(pos);
         }
 
-        // POST /api/purchase-orders - Create new PO
+        // POST /api/purchase-orders
         [HttpPost]
         [Authorize(Roles = "ADMIN,MANAGER,OFFICER")]
         public async Task<IActionResult> Create([FromBody] CreatePODto dto)
@@ -96,7 +96,7 @@ namespace PurchaseService.Controllers
             return Ok(result);
         }
 
-        // PUT /api/purchase-orders/{id} - Update PO
+        // PUT /api/purchase-orders/{id}
         [HttpPut("{id}")]
         [Authorize(Roles = "ADMIN,MANAGER,OFFICER")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdatePODto dto)
@@ -106,7 +106,21 @@ namespace PurchaseService.Controllers
             return Ok("Purchase order updated successfully");
         }
 
-        // PUT /api/purchase-orders/{id}/approve - Approve PO
+        // ─── NEW: PUT /api/purchase-orders/{id}/submit ────────────────────────
+        // Moves a Draft PO to Pending status (submitted for manager approval).
+        // Also triggers a PO_PENDING alert to approvers via alert service.
+        [HttpPut("{id}/submit")]
+        [Authorize(Roles = "ADMIN,MANAGER,OFFICER")]
+        public async Task<IActionResult> Submit(int id)
+        {
+            var result = await _purchaseService.SubmitPOAsync(id);
+            if (result != "Purchase order submitted successfully")
+                return BadRequest(result);
+            return Ok(result);
+        }
+        // ──────────────────────────────────────────────────────────────────────
+
+        // PUT /api/purchase-orders/{id}/approve
         [HttpPut("{id}/approve")]
         [Authorize(Roles = "ADMIN,MANAGER")]
         public async Task<IActionResult> Approve(int id)
@@ -117,7 +131,7 @@ namespace PurchaseService.Controllers
             return Ok(result);
         }
 
-        // POST /api/purchase-orders/receive - Receive goods (GRN)
+        // POST /api/purchase-orders/receive
         [HttpPost("receive")]
         [Authorize(Roles = "ADMIN,MANAGER,STAFF")]
         public async Task<IActionResult> ReceiveGoods([FromBody] ReceiveGoodsDto dto)
@@ -128,7 +142,7 @@ namespace PurchaseService.Controllers
             return Ok(result);
         }
 
-        // PUT /api/purchase-orders/{id}/cancel - Cancel PO
+        // PUT /api/purchase-orders/{id}/cancel
         [HttpPut("{id}/cancel")]
         [Authorize(Roles = "ADMIN,MANAGER")]
         public async Task<IActionResult> Cancel(int id)

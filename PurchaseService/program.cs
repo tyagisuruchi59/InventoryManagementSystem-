@@ -1,8 +1,8 @@
-// StockPro Inventory Management System
+﻿// StockPro Inventory Management System
 // Service: Purchase Service | Entry Point
 // Developer: Suru | April 2026
-// Description: Configures database, JWT, services, middleware
 
+using MassTransit;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -11,18 +11,22 @@ using System.Text;
 using PurchaseService.Data;
 using PurchaseService.Repositories;
 using PurchaseService.Services;
+using PurchaseService.Publishers;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.WebHost.UseUrls("http://0.0.0.0:80");
 
 // DATABASE
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 // DEPENDENCY INJECTION
+builder.Services.AddScoped<POApprovedPublisher>();
+builder.Services.AddScoped<POSubmittedPublisher>();
 builder.Services.AddScoped<IPurchaseRepository, PurchaseRepository>();
 builder.Services.AddScoped<IPurchaseService, PurchaseServiceImpl>();
 
-// CORS - Allow React frontend
+// CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReact", policy =>
@@ -35,6 +39,19 @@ builder.Services.AddCors(options =>
 
 // CONTROLLERS
 builder.Services.AddControllers();
+
+// MASSTRANSIT - RABBITMQ
+builder.Services.AddMassTransit(x =>
+{
+    x.UsingRabbitMq((context, cfg) =>
+    {
+        cfg.Host(builder.Configuration["RabbitMQ__Host"] ?? "rabbitmq", "/", h =>
+        {
+            h.Username(builder.Configuration["RabbitMQ__User"] ?? "stockpro");
+            h.Password(builder.Configuration["RabbitMQ__Pass"] ?? "StockPro@2026");
+        });
+    });
+});
 
 // SWAGGER WITH JWT
 builder.Services.AddEndpointsApiExplorer();
@@ -71,7 +88,7 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
-// JWT AUTHENTICATION
+// JWT
 var key = "MyVeryStrongSecretKeyForJwtAuth1234567890Secure";
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 .AddJwtBearer(options =>
@@ -97,7 +114,7 @@ using (var scope = app.Services.CreateScope())
     db.Database.Migrate();
 }
 
-// MIDDLEWARE - ORDER IS IMPORTANT!
+// MIDDLEWARE
 app.UseSwagger();
 app.UseSwaggerUI();
 app.UseCors("AllowReact");
