@@ -3,7 +3,7 @@ WORKDIR /src
 
 COPY . .
 
-RUN dotnet restore InventoryManagementSystem.sln
+RUN dotnet restore MovementService/MovementService.csproj
 RUN dotnet publish MovementService/MovementService.csproj -c Release -o /app/publish /p:UseAppHost=false
 
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
