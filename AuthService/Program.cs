@@ -7,7 +7,12 @@ using AuthService.Data;
 using AuthService.Repositories;
 using AuthService.Services;
 var builder = WebApplication.CreateBuilder(args);
-builder.WebHost.ConfigureKestrel(o => o.ListenAnyIP(80));
+var port = int.Parse(Environment.GetEnvironmentVariable("PORT") ?? "8080");
+
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(port);
+});
 builder.Services.AddDbContext<AppDbContext>(options => options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IAuthService, AuthServiceImpl>();
