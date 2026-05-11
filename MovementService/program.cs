@@ -83,7 +83,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReact", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
+        policy.WithOrigins("http://localhost:3000"|| "https://inventory-management-system-git-e0c2d7-tyagisuruchi59s-projects.vercel.app")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
