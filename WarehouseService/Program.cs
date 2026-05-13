@@ -25,17 +25,14 @@ builder.Services.AddScoped<IWarehouseRepository, WarehouseRepository>();
 builder.Services.AddScoped<IWarehouseService, WarehouseServiceImpl>();
 builder.Services.AddScoped<LowStockPublisher>();
 
+builder.Services.AddRouting(); // ← ADDED
+
 // CORS
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReact", policy =>
     {
-        policy.WithOrigins(
-            "http://localhost:3000",
-            "http://localhost:3001",
-            "https://inventory-management-system-git-e0c2d7-tyagisuruchi59s-projects.vercel.app",
-            "https://inventory-management-system.vercel.app"
-        )
+        policy.AllowAnyOrigin()   // ← CHANGED (temporary to debug)
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
@@ -118,10 +115,11 @@ using (var scope = app.Services.CreateScope())
     db.Database.EnsureCreated();
 }
 
-// MIDDLEWARE
+// MIDDLEWARE - ORDER MATTERS
 app.UseSwagger();
 app.UseSwaggerUI();
-app.UseCors("AllowReact");
+app.UseCors("AllowReact");    // ← MUST be before UseAuthentication
+app.UseRouting();              // ← ADDED
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
