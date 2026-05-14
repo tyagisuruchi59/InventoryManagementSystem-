@@ -1,0 +1,9 @@
+﻿D:\InventoryManagementSystem\ProductService.Tests\MSTestSettings.cs
+D:\InventoryManagementSystem\ProductService.Tests\ProductServiceTests.cs
+D:\InventoryManagementSystem\ProductService.Tests\Test1.cs
+C:\Users\suruc\.nuget\packages\microsoft.net.test.sdk\18.0.0\build\net8.0\Microsoft.NET.Test.Sdk.Program.cs
+C:\Users\suruc\.nuget\packages\microsoft.testplatform.testhost\18.0.0\build\net8.0\x64\testhost.exe
+C:\Users\suruc\.nuget\packages\microsoft.testplatform.testhost\18.0.0\build\net8.0\x64\testhost.dll
+C:\Users\suruc\.nuget\packages\mstest.testadapter\4.0.1\buildTransitive\net9.0\MSTest.TestAdapter.dll
+C:\Users\suruc\.nuget\packages\mstest.testadapter\4.0.1\buildTransitive\net9.0\MSTestAdapter.PlatformServices.dll
+C:\Users\suruc\.nuget\packages\mstest.testadapter\4.0.1\buildTransitive\net9.0\Microsoft.TestPlatform.AdapterUtilities.dll

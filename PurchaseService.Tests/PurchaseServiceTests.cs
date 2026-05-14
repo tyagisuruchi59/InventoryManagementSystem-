@@ -20,16 +20,15 @@ namespace PurchaseService.Tests
         private Mock<IPurchaseRepository> _mockRepo;
         private PurchaseServiceImpl _purchaseService;
 
-        [TestInitialize]
-        public void Setup()
-        {
-            _mockRepo = new Mock<IPurchaseRepository>();
-            var mockPublishEndpoint = new Mock<IPublishEndpoint>();
-            var mockLogger = new Mock<Microsoft.Extensions.Logging.ILogger<POApprovedPublisher>>();
-            var publisher = new POApprovedPublisher(mockPublishEndpoint.Object, mockLogger.Object);
-            _purchaseService = new PurchaseServiceImpl(_mockRepo.Object, publisher);
-        }
-
+       [TestInitialize]
+public void Setup()
+{
+    _mockRepo = new Mock<IPurchaseRepository>();
+    var mockPublishEndpoint = new Mock<IPublishEndpoint>();
+    var mockLogger = new Mock<Microsoft.Extensions.Logging.ILogger<POApprovedPublisher>>();
+    var publisher = new POApprovedPublisher(mockPublishEndpoint.Object, mockLogger.Object);
+    _purchaseService = new PurchaseServiceImpl(_mockRepo.Object, publisher, null!);
+}
         // TEST 1 — Create PO should succeed
         [TestMethod]
         public async Task CreatePO_ValidData_ReturnsSuccess()

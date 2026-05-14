@@ -1,0 +1,1 @@
+LR?D:\InventoryManagementSystem\ReportService\ReportService.csprojòCSharp12

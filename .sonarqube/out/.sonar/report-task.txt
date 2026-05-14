@@ -1,0 +1,6 @@
+projectKey=stockpro2
+serverUrl=http://localhost:9000
+serverVersion=26.5.0.122743
+dashboardUrl=http://localhost:9000/dashboard?id=stockpro2
+ceTaskId=4a3776e3-21d6-42c5-b81d-4d792894a1dd
+ceTaskUrl=http://localhost:9000/api/ce/task?id=4a3776e3-21d6-42c5-b81d-4d792894a1dd

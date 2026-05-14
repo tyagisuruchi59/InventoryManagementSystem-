@@ -1,0 +1,17 @@
+w
+lD:\InventoryManagementSystem\ReportService\obj\Debug\net8.0\ReportService.MvcApplicationPartsAssemblyInfo.csutf-8d
+YD:\InventoryManagementSystem\ReportService\obj\Debug\net8.0\ReportService.AssemblyInfo.csutf-8u
+jD:\InventoryManagementSystem\ReportService\obj\Debug\net8.0\.NETCoreApp,Version=v8.0.AssemblyAttributes.csutf-8f
+[D:\InventoryManagementSystem\ReportService\obj\Debug\net8.0\ReportService.GlobalUsings.g.csutf-8Y
+PD:\InventoryManagementSystem\ReportService\Services\SnapshotBackgroundService.csutf-8Q
+HD:\InventoryManagementSystem\ReportService\Services\ReportServiceImpl.csutf-8N
+ED:\InventoryManagementSystem\ReportService\Services\IReportService.csutf-8P
+GD:\InventoryManagementSystem\ReportService\Services\DailySnapshotJob.csutf-8T
+KD:\InventoryManagementSystem\ReportService\Repositories\ReportRepository.csutf-8U
+LD:\InventoryManagementSystem\ReportService\Repositories\IReportRepository.csutf-8>
+5D:\InventoryManagementSystem\ReportService\program.csutf-8O
+FD:\InventoryManagementSystem\ReportService\Models\InventorySnapshot.csutf-8G
+>D:\InventoryManagementSystem\ReportService\DTOs\SnapshotDto.csutf-8M
+DD:\InventoryManagementSystem\ReportService\DTOs\ReportResponseDto.csutf-8H
+?D:\InventoryManagementSystem\ReportService\Data\AppDbContext.csutf-8S
+JD:\InventoryManagementSystem\ReportService\Controllers\ReportController.csutf-8

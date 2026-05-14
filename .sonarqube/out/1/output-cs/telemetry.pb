@@ -1,0 +1,1 @@
+JR=D:\InventoryManagementSystem\AlertService\AlertService.csprojòCSharp12

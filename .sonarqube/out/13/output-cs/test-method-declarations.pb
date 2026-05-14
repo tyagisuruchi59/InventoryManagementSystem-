@@ -1,0 +1,12 @@
+—
+BD:\InventoryManagementSystem\AuthService.Tests\AuthServiceTests.csAuthService.TestsE
+"AuthService.Tests.AuthServiceTestsRegister_NewUser_ReturnsSuccessL
+"AuthService.Tests.AuthServiceTests&Register_ExistingUser_ReturnsDuplicateE
+"AuthService.Tests.AuthServiceTestsLogin_WrongPassword_ReturnsNullH
+"AuthService.Tests.AuthServiceTests"Login_CorrectPassword_ReturnsTokenD
+"AuthService.Tests.AuthServiceTestsLogin_InactiveUser_ReturnsNullA
+"AuthService.Tests.AuthServiceTestsGetAllUsers_ReturnsUserListI
+"AuthService.Tests.AuthServiceTests#Register_EmptyUsername_ReturnsErrorD
+"AuthService.Tests.AuthServiceTestsLogin_UserNotFound_ReturnsNullt
+7D:\InventoryManagementSystem\AuthService.Tests\Test1.csAuthService.Tests&
+AuthService.Tests.Test1TestMethod1

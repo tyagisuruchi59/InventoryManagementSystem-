@@ -1,0 +1,38 @@
+Product projects
+---------------------------------------
+D:\InventoryManagementSystem\SupplierService\SupplierService.csproj
+D:\InventoryManagementSystem\AlertService\AlertService.csproj
+D:\InventoryManagementSystem\PurchaseService\PurchaseService.csproj
+D:\InventoryManagementSystem\ProductService\ProductService.csproj
+D:\InventoryManagementSystem\MovementService\MovementService.csproj
+D:\InventoryManagementSystem\ReportService\ReportService.csproj
+D:\InventoryManagementSystem\WarehouseService\WarehouseService.csproj
+D:\InventoryManagementSystem\AuthService\AuthService.csproj
+
+
+Test projects
+---------------------------------------
+D:\InventoryManagementSystem\SupplierService.Tests\SupplierService.Tests.csproj
+D:\InventoryManagementSystem\PurchaseService.Tests\PurchaseService.Tests.csproj
+D:\InventoryManagementSystem\AlertService.Tests\AlertService.Tests.csproj
+D:\InventoryManagementSystem\AuthService.Tests\AuthService.Tests.csproj
+D:\InventoryManagementSystem\MovementService.Tests\MovementService.Tests.csproj
+D:\InventoryManagementSystem\ProductService.Tests\ProductService.Tests.csproj
+D:\InventoryManagementSystem\WarehouseService.Tests\WarehouseService.Tests.csproj
+
+
+Invalid projects
+---------------------------------------
+{none}
+
+
+Skipped projects
+---------------------------------------
+{none}
+
+
+Excluded projects
+---------------------------------------
+{none}
+
+

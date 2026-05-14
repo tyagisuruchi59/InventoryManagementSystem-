@@ -4,6 +4,7 @@ using AlertService.DTOs;
 using AlertService.Models;
 using AlertService.Repositories;
 using AlertService.Services;
+using Microsoft.Extensions.Configuration;
 
 namespace AlertService.Tests
 {
@@ -17,7 +18,8 @@ namespace AlertService.Tests
         public void Setup()
         {
             _mockRepo = new Mock<IAlertRepository>();
-            _alertService = new AlertServiceImpl(_mockRepo.Object);
+           var config = new ConfigurationBuilder().Build();
+_alertService = new AlertServiceImpl(_mockRepo.Object, config);
         }
 
         // 1
