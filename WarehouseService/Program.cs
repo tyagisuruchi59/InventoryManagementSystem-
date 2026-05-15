@@ -123,10 +123,9 @@ using (var scope = app.Services.CreateScope())
 // MIDDLEWARE - ORDER MATTERS
 app.UseSwagger();
 app.UseSwaggerUI();
-app.UseRouting();
 app.UseCors("AllowReact");
+app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
-
 app.Run();
