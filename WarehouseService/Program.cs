@@ -31,7 +31,7 @@ builder.Services.AddRouting();
 // CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowReact", policy =>
+    options.AddDefaultPolicy(policy =>
     {
         policy.AllowAnyOrigin()
               .AllowAnyHeader()
@@ -123,7 +123,7 @@ using (var scope = app.Services.CreateScope())
 // MIDDLEWARE - ORDER MATTERS
 app.UseSwagger();
 app.UseSwaggerUI();
-app.UseCors("AllowReact");
+app.UseCors();
 app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
