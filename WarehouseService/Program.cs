@@ -43,18 +43,22 @@ builder.Services.AddCors(options =>
 builder.Services.AddControllers();
 
 // MASSTRANSIT - RABBITMQ
-builder.Services.AddMassTransit(x =>
+// MASSTRANSIT - RABBITMQ (optional for Render)
+var rabbitHost = builder.Configuration["RabbitMQ__Host"];
+if (!string.IsNullOrEmpty(rabbitHost))
 {
-    x.UsingRabbitMq((context, cfg) =>
+    builder.Services.AddMassTransit(x =>
     {
-        cfg.Host(builder.Configuration["RabbitMQ__Host"] ?? "rabbitmq", "/", h =>
+        x.UsingRabbitMq((context, cfg) =>
         {
-            h.Username(builder.Configuration["RabbitMQ__User"] ?? "stockpro");
-            h.Password(builder.Configuration["RabbitMQ__Pass"] ?? "StockPro@2026");
+            cfg.Host(rabbitHost, "/", h =>
+            {
+                h.Username(builder.Configuration["RabbitMQ__User"] ?? "stockpro");
+                h.Password(builder.Configuration["RabbitMQ__Pass"] ?? "StockPro@2026");
+            });
         });
     });
-});
-
+}
 // SWAGGER WITH JWT
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
